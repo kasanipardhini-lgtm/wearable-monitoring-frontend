@@ -1,340 +1,330 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f4f7fb">
-  <title>AirSense | Environmental Monitoring</title>
+  <meta name="theme-color" content="#102a43">
+  <meta name="description" content="Live wearable UV and pollution monitoring dashboard">
+  <title>Wearable UV & Pollution Monitor</title>
 
-  <link rel="stylesheet" href="style.css">
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #183153;
+      --muted: #64748b;
+      --primary: #2463eb;
+      --border: #e2e8f0;
+      --green: #15803d;
+      --red: #b91c1c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: #102a43;
+      color: white;
+      padding: 26px 20px;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: clamp(23px, 4vw, 34px);
+    }
+
+    header p {
+      margin: 0;
+      color: #d9e7f5;
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: auto;
+      padding: 22px 16px 40px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .connection {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 13px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 700;
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .connection.connected {
+      background: #dcfce7;
+      color: var(--green);
+    }
+
+    .connection.disconnected {
+      background: #fee2e2;
+      color: var(--red);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .sensor-card, .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+      min-width: 0;
+    }
+
+    .sensor-card h2 {
+      font-size: 15px;
+      color: var(--muted);
+      margin: 0 0 16px;
+      font-weight: 600;
+    }
+
+    .value {
+      font-size: clamp(27px, 4vw, 36px);
+      font-weight: 750;
+      overflow-wrap: anywhere;
+      margin-bottom: 8px;
+    }
+
+    .unit {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 6px 9px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    .wide {
+      margin-top: 18px;
+    }
+
+    .panel h2 {
+      font-size: 19px;
+      margin: 0 0 12px;
+    }
+
+    .panel p {
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 0;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .chart-box {
+      height: 250px;
+      position: relative;
+    }
+
+    .chart-box canvas {
+      max-width: 100%;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 22px 0 0;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      main {
+        padding-inline: 12px;
+      }
+
+      .sensor-card, .panel {
+        padding: 17px;
+      }
+    }
+  </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js" defer></script>
 </head>
 
 <body>
-  <header class="topbar">
-    <a class="brand" href="#overview">
-      <span class="brand-icon">A</span>
-      <span>
-        <strong>AirSense</strong>
-        <small>Environmental Monitoring</small>
-      </span>
-    </a>
-
-    <nav aria-label="Main navigation">
-      <a href="#overview">Overview</a>
-      <a href="#readings">Readings</a>
-      <a href="#trends">Graphs</a>
-      <a href="#protection">Skincare</a>
-    </nav>
-
-    <div id="connection" class="connection disconnected">
-      <span class="dot"></span>
-      <span id="connection-text">Connecting to API...</span>
-    </div>
+  <header>
+    <h1>Wearable UV & Pollution Monitor</h1>
+    <p>Live environmental readings from your ESP32 wearable device</p>
   </header>
 
   <main>
-    <section id="overview" class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">ENVIRONMENTAL INTELLIGENCE</p>
-        <h1>Understand your<br>environment.</h1>
-
-        <p class="muted">
-          Monitor UV exposure, air pollution, dust, temperature,
-          humidity, atmospheric pressure, altitude and movement.
-        </p>
-
-        <p id="last-updated" class="small">
-          Connecting to the backend...
-        </p>
+    <div class="topbar">
+      <div>
+        <strong>Sensor Dashboard</strong>
+        <div class="unit" id="last-updated">Waiting for sensor data…</div>
       </div>
 
-      <div class="hero-actions">
-        <div class="auto-refresh-status">
-          <span class="live-dot"></span>
-          API refresh every 2 seconds
-        </div>
-
-        <span class="pill">ESP32 monitoring prototype</span>
+      <div id="connection" class="connection disconnected">
+        <span>●</span>
+        <span id="connection-text">Connecting to backend…</span>
       </div>
+    </div>
+
+    <section class="grid" aria-label="Live sensor readings">
+      <article class="sensor-card">
+        <h2>UV Index</h2>
+        <div class="value" id="uv-value">—</div>
+        <div class="unit">UV index</div>
+        <div class="status" id="uv-status">Waiting for data</div>
+      </article>
+
+      <article class="sensor-card">
+        <h2>Pollution / Dust</h2>
+        <div class="value" id="pollution-value">—</div>
+        <div class="unit">Dust sensor ADC reading</div>
+        <div class="status" id="pollution-status">Waiting for data</div>
+      </article>
+
+      <article class="sensor-card">
+        <h2>Temperature</h2>
+        <div class="value" id="temperature-value">—</div>
+        <div class="unit">°C</div>
+      </article>
+
+      <article class="sensor-card">
+        <h2>Humidity</h2>
+        <div class="value" id="humidity-value">—</div>
+        <div class="unit">%</div>
+      </article>
+
+      <article class="sensor-card">
+        <h2>Atmospheric Pressure</h2>
+        <div class="value" id="pressure-value">—</div>
+        <div class="unit">hPa</div>
+      </article>
+
+      <article class="sensor-card">
+        <h2>Altitude</h2>
+        <div class="value" id="altitude-value">—</div>
+        <div class="unit">m</div>
+      </article>
+
+      <article class="sensor-card">
+        <h2>Acceleration</h2>
+        <div class="value" id="acceleration-value">—</div>
+        <div class="unit">m/s²</div>
+        <div class="status" id="acceleration-status">Waiting for data</div>
+      </article>
     </section>
 
-    <section id="readings" class="section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">SENSOR OVERVIEW</p>
-          <h2>Environmental readings</h2>
-        </div>
-
-        <span id="data-label" class="muted small">
-          Waiting for API data
-        </span>
-      </div>
-
-      <div class="metrics-grid">
-        <article class="metric-card uv-card">
-          <div class="metric-top">
-            <span class="metric-icon">☀</span>
-            <span class="tag">UV</span>
-          </div>
-          <h3>UV Index</h3>
-          <p class="metric-value">
-            <span id="uv-value">—</span>
-            <small>index</small>
-          </p>
-          <p id="uv-status" class="metric-status">Waiting for data</p>
-          <p class="card-note">Ultraviolet exposure</p>
-        </article>
-
-        <article class="metric-card">
-          <div class="metric-top">
-            <span class="metric-icon">◉</span>
-            <span class="tag">AIR</span>
-          </div>
-          <h3>Air pollution</h3>
-          <p class="metric-value">
-            <span id="pollution-value">—</span>
-            <small>index*</small>
-          </p>
-          <p id="pollution-status" class="metric-status">Waiting for data</p>
-          <p class="card-note">Generic pollution reading</p>
-        </article>
-
-        <article class="metric-card">
-          <div class="metric-top">
-            <span class="metric-icon">•</span>
-            <span class="tag">PM1</span>
-          </div>
-          <h3>PM1 particles</h3>
-          <p class="metric-value">
-            <span id="pm1-value">—</span>
-            <small>µg/m³</small>
-          </p>
-          <p id="pm1-status" class="metric-status">Waiting for data</p>
-          <p class="card-note">Fine airborne particles</p>
-        </article>
-
-        <article class="metric-card">
-          <div class="metric-top">
-            <span class="metric-icon">•</span>
-            <span class="tag">PM2.5</span>
-          </div>
-          <h3>PM2.5 particles</h3>
-          <p class="metric-value">
-            <span id="pm25-value">—</span>
-            <small>µg/m³</small>
-          </p>
-          <p id="pm25-status" class="metric-status">Waiting for data</p>
-          <p class="card-note">Fine airborne particles</p>
-        </article>
-
-        <article class="metric-card">
-          <div class="metric-top">
-            <span class="metric-icon">•</span>
-            <span class="tag">PM10</span>
-          </div>
-          <h3>PM10 particles</h3>
-          <p class="metric-value">
-            <span id="pm10-value">—</span>
-            <small>µg/m³</small>
-          </p>
-          <p id="pm10-status" class="metric-status">Waiting for data</p>
-          <p class="card-note">Airborne particles</p>
-        </article>
-
-        <article class="metric-card">
-          <div class="metric-top">
-            <span class="metric-icon">♨</span>
-            <span class="tag">TEMP</span>
-          </div>
-          <h3>Temperature</h3>
-          <p class="metric-value">
-            <span id="temperature-value">—</span>
-            <small>°C</small>
-          </p>
-          <p id="temperature-status" class="metric-status">Waiting for data</p>
-          <p class="card-note">Ambient temperature</p>
-        </article>
-
-        <article class="metric-card">
-          <div class="metric-top">
-            <span class="metric-icon">≈</span>
-            <span class="tag">RH</span>
-          </div>
-          <h3>Humidity</h3>
-          <p class="metric-value">
-            <span id="humidity-value">—</span>
-            <small>%</small>
-          </p>
-          <p id="humidity-status" class="metric-status">Waiting for data</p>
-          <p class="card-note">Relative humidity</p>
-        </article>
-
-        <article class="metric-card">
-          <div class="metric-top">
-            <span class="metric-icon">↔</span>
-            <span class="tag">PRESSURE</span>
-          </div>
-          <h3>Atmospheric pressure</h3>
-          <p class="metric-value">
-            <span id="pressure-value">—</span>
-            <small>hPa</small>
-          </p>
-          <p id="pressure-status" class="metric-status">Waiting for data</p>
-          <p class="card-note">Barometric pressure</p>
-        </article>
-
-        <article class="metric-card">
-          <div class="metric-top">
-            <span class="metric-icon">⌁</span>
-            <span class="tag">ALTITUDE</span>
-          </div>
-          <h3>Altitude</h3>
-          <p class="metric-value">
-            <span id="altitude-value">—</span>
-            <small>m</small>
-          </p>
-          <p id="altitude-status" class="metric-status">Waiting for data</p>
-          <p class="card-note">Estimated elevation</p>
-        </article>
-
-        <article class="metric-card">
-          <div class="metric-top">
-            <span class="metric-icon">↔</span>
-            <span class="tag">PIR</span>
-          </div>
-          <h3>Movement detection</h3>
-          <p class="metric-value motion-value" id="motion-value">—</p>
-          <p id="motion-status" class="metric-status">Waiting for data</p>
-          <p class="card-note">Motion sensor state</p>
-        </article>
-      </div>
-
-      <p class="small muted note">
-        *The generic pollution value is not the same as PM1,
-        PM2.5 or PM10. Unavailable measurements remain blank.
+    <section class="panel wide">
+      <h2>UV Protection Guidance</h2>
+      <h3 id="guidance-title">Waiting for UV data</h3>
+      <p id="guidance-text">
+        Guidance will appear when a valid UV reading is available.
+      </p>
+      <p id="guidance-source" class="unit">
+        Educational information only.
       </p>
     </section>
 
-    <section id="trends" class="section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">HISTORICAL DATA</p>
-          <h2>Sensor trends</h2>
+    <section class="panel wide">
+      <h2>Device Status</h2>
+      <p id="data-label">Waiting for API data</p>
+      <p>Alarm / reason: <strong id="alarm-status">—</strong></p>
+    </section>
+
+    <section class="chart-grid" aria-label="Sensor history charts">
+      <article class="panel">
+        <h2>UV History</h2>
+        <div class="chart-box">
+          <canvas id="uv-chart"></canvas>
         </div>
-        <span class="muted small">Latest 12 API readings</span>
-      </div>
+      </article>
 
-      <div class="charts-grid">
-        <article class="panel">
-          <h3>UV index trend</h3>
-          <p class="muted small">UV index over time</p>
-          <div class="chart-wrap">
-            <canvas id="uv-chart" role="img" aria-label="UV index history"></canvas>
-          </div>
-        </article>
-
-        <article class="panel">
-          <h3>Air particle levels</h3>
-          <p class="muted small">PM1, PM2.5 and PM10 · µg/m³</p>
-          <div class="chart-wrap">
-            <canvas id="particle-chart" role="img" aria-label="Air particle history"></canvas>
-          </div>
-        </article>
-
-        <article class="panel">
-          <h3>Temperature and humidity</h3>
-          <p class="muted small">Temperature °C and humidity %</p>
-          <div class="chart-wrap">
-            <canvas id="climate-chart" role="img" aria-label="Temperature and humidity history"></canvas>
-          </div>
-        </article>
-
-        <article class="panel">
-          <h3>Pressure and altitude</h3>
-          <p class="muted small">Pressure hPa and altitude m</p>
-          <div class="chart-wrap">
-            <canvas id="pressure-chart" role="img" aria-label="Pressure and altitude history"></canvas>
-          </div>
-        </article>
-
-        <article class="panel">
-          <h3>Movement history</h3>
-          <p class="muted small">0 = no motion, 1 = motion detected</p>
-          <div class="chart-wrap">
-            <canvas id="motion-chart" role="img" aria-label="Movement history"></canvas>
-          </div>
-        </article>
-      </div>
-
-      <p class="small muted note">
-        Graphs use API readings received while this page is open.
-        Older history requires the backend to provide stored readings.
-      </p>
-    </section>
-
-    <section id="protection" class="section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">PERSONAL UV AWARENESS</p>
-          <h2>Skin &amp; sun protection</h2>
+      <article class="panel">
+        <h2>Temperature History</h2>
+        <div class="chart-box">
+          <canvas id="temperature-chart"></canvas>
         </div>
-      </div>
+      </article>
 
-      <div class="protection-grid">
-        <article class="panel">
-          <h3>Choose your skin type</h3>
-          <p class="muted small">
-            Select the description that best matches how your skin
-            responds to sunlight.
-          </p>
+      <article class="panel">
+        <h2>Humidity History</h2>
+        <div class="chart-box">
+          <canvas id="humidity-chart"></canvas>
+        </div>
+      </article>
 
-          <label for="skin-type">Skin response to sunlight</label>
-          <select id="skin-type">
-            <option value="I">Type I — Always burns, rarely tans</option>
-            <option value="II">Type II — Usually burns</option>
-            <option value="III" selected>Type III — Sometimes burns, gradually tans</option>
-            <option value="IV">Type IV — Burns less often, tans easily</option>
-            <option value="V">Type V — Rarely burns, tans deeply</option>
-            <option value="VI">Type VI — Very rarely burns</option>
-          </select>
+      <article class="panel">
+        <h2>Pressure History</h2>
+        <div class="chart-box">
+          <canvas id="pressure-chart"></canvas>
+        </div>
+      </article>
 
-          <p class="small muted">
-            All skin types can be affected by UV exposure.
-            This selector is educational, not a medical assessment.
-          </p>
-        </article>
+      <article class="panel">
+        <h2>Altitude History</h2>
+        <div class="chart-box">
+          <canvas id="altitude-chart"></canvas>
+        </div>
+      </article>
 
-        <article class="panel guidance-panel">
-          <div class="guidance-icon">☀</div>
-          <div>
-            <p class="eyebrow">PROTECTION GUIDANCE</p>
-            <h3 id="guidance-title">Waiting for UV data</h3>
-            <p id="guidance-text">
-              Sun protection guidance will appear when the API
-              supplies a valid UV index.
-            </p>
-            <p id="guidance-source" class="small muted">
-              Educational guidance based on the latest API reading.
-            </p>
-          </div>
-        </article>
-      </div>
+      <article class="panel">
+        <h2>Acceleration History</h2>
+        <div class="chart-box">
+          <canvas id="acceleration-chart"></canvas>
+        </div>
+      </article>
     </section>
 
-    <section class="panel about-panel">
-      <h2>About AirSense</h2>
-      <p class="muted">
-        AirSense is an ESP32-based environmental monitoring prototype.
-        This dashboard displays API readings only. A compatible sensor
-        and backend field are required for each measurement.
-      </p>
-    </section>
+    <div class="footer">
+      Wearable UV & Pollution Monitoring System · Live API readings
+    </div>
   </main>
-
-  <footer>AirSense · Environmental Monitoring Project</footer>
 </body>
 </html>
