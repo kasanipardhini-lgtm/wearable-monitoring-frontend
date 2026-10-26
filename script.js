@@ -17,59 +17,55 @@ function numberOrNull(value) {
     return null;
   }
 
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
 function normalizeApiData(payload) {
-  const data = payload?.data ?? payload;
+  const d = payload?.data ?? payload;
 
   return {
-    temperature: numberOrNull(data?.temperature),
-    humidity: numberOrNull(data?.humidity),
-    uvIndex: numberOrNull(data?.uvIndex),
-    pollution: numberOrNull(data?.pollution ?? data?.dust),
-    pressure: numberOrNull(data?.pressure ?? data?.atmosphericPressure),
-    altitude: numberOrNull(data?.altitude),
-    acceleration: numberOrNull(data?.acceleration),
-    alarm: data?.alarm === true,
-    reason: data?.reason ?? "Unknown",
-    timestamp: data?.timestamp ?? new Date().toISOString()
+    temperature: numberOrNull(d?.temperature),
+    humidity: numberOrNull(d?.humidity),
+    uvIndex: numberOrNull(d?.uvIndex),
+    pollution: numberOrNull(d?.pollution ?? d?.dust),
+    pressure: numberOrNull(d?.pressure ?? d?.atmosphericPressure),
+    altitude: numberOrNull(d?.altitude),
+    acceleration: numberOrNull(d?.acceleration),
+    alarm: d?.alarm === true,
+    reason: d?.reason ?? "NORMAL",
+    timestamp: d?.timestamp ?? null
   };
 }
 
 function setConnection(state, message) {
-  const connection = $("connection");
+  const el = $("connection");
+  if (el) el.className = `connection ${state}`;
 
-  if (connection) {
-    connection.className = `connection ${state}`;
-    const text = $("connection-text");
-    if (text) text.textContent = message;
-  }
+  const label = $("connection-text");
+  if (label) label.textContent = message;
 }
 
-function showValue(id, value, decimals = 0, suffix = "") {
-  const element = $(id);
-  if (!element) return;
+function showValue(id, value, decimals = 0) {
+  const el = $(id);
+  if (!el) return;
 
-  if (value === null || value === undefined) {
-    element.textContent = "—";
-    return;
-  }
-
-  const formatted =
-    decimals > 0 ? Number(value).toFixed(decimals) : String(value);
-
-  element.textContent = `${formatted}${suffix}`;
+  el.textContent =
+    value === null || value === undefined
+      ? "—"
+      : decimals > 0
+        ? Number(value).toFixed(decimals)
+        : String(value);
 }
 
 function showStatus(id, message) {
-  const element = $(id);
-  if (element) element.textContent = message;
+  const el = $(id);
+  if (el) el.textContent = message;
 }
 
 function uvRisk(uv) {
   if (uv === null) return "Unavailable";
+  if (uv < 0) return "Invalid reading";
   if (uv <= 2) return "Low";
   if (uv <= 5) return "Moderate";
   if (uv <= 7) return "High";
@@ -77,84 +73,111 @@ function uvRisk(uv) {
   return "Extreme";
 }
 
-function updateGuidance(uv) {
-  const title = $("guidance-title");
-  const text = $("guidance-text");
-  const source = $("guidance-source");
+function updateSkinCare(uv) {
+  const type = $("skin-type")?.value ?? "III";
+  let advice = "Waiting for a valid UV reading.";
 
-  if (!title || !text) return;
-
-  let advice =
-    "UV data is unavailable. Check a trusted local UV forecast.";
-
-  if (uv !== null) {
+  if (uv !== null && uv >= 0) {
     if (uv <= 2) {
-      advice = "UV risk is generally low. Use sun protection during extended outdoor exposure.";
+      advice =
+        "UV risk is generally low. For extended outdoor exposure, consider sunscreen, sunglasses and protective clothing.";
     } else if (uv <= 5) {
-      advice = "Seek shade when sunlight is strong. Wear protective clothing and sunscreen.";
+      advice =
+        "Use sun protection. Apply broad-spectrum SPF 30+ sunscreen, wear sunglasses and protective clothing, and seek shade when sunlight is strong.";
     } else if (uv <= 7) {
-      advice = "Protection is important. Reduce midday sun exposure and use sunscreen.";
+      advice =
+        "Protection is important. Reduce midday sun exposure, seek shade, and use broad-spectrum SPF 30+ sunscreen and protective clothing.";
     } else {
-      advice = "UV risk is very high. Minimise midday sun exposure and use strong sun protection.";
+      advice =
+        "UV risk is very high or extreme. Minimise midday sun exposure, seek shade, cover exposed skin and use broad-spectrum SPF 30+ sunscreen.";
     }
   }
 
-  title.textContent = `UV risk: ${uvRisk(uv)}`;
-  text.textContent = advice;
+  const typeAdvice = {
+    I: "Very fair skin often burns easily.",
+    II: "Fair skin commonly burns easily.",
+    III: "Medium skin may sometimes burn.",
+    IV: "Olive skin may burn less often, but UV damage is still possible.",
+    V: "Brown skin may burn less often, but UV damage is still possible.",
+    VI: "Deeply pigmented skin can still experience UV damage."
+  };
 
+  const title = $("skincare-title");
+  const text = $("skincare-advice");
+
+  if (title) {
+    title.textContent =
+      uv === null ? "Your UV Protection Advice" : `UV risk: ${uvRisk(uv)}`;
+  }
+
+  if (text) {
+    text.textContent = `${advice} ${typeAdvice[type] ?? ""}`;
+  }
+
+  const guidanceTitle = $("guidance-title");
+  const guidanceText = $("guidance-text");
+
+  if (guidanceTitle) {
+    guidanceTitle.textContent =
+      uv === null ? "Waiting for UV data" : `UV risk: ${uvRisk(uv)}`;
+  }
+
+  if (guidanceText) guidanceText.textContent = advice;
+
+  const source = $("guidance-source");
   if (source) {
-    source.textContent = "Educational guidance based on the reported UV index.";
+    source.textContent =
+      "General educational guidance. Skin type does not eliminate UV risk.";
   }
 }
 
-function renderReading(reading) {
-  showValue("temperature-value", reading.temperature, 1);
-  showValue("humidity-value", reading.humidity);
-  showValue("uv-value", reading.uvIndex, 1);
-  showValue("pollution-value", reading.pollution);
-  showValue("pressure-value", reading.pressure, 1);
-  showValue("altitude-value", reading.altitude, 1);
+function renderReading(r) {
+  showValue("uv-value", r.uvIndex, 1);
+  showValue("pollution-value", r.pollution);
+  showValue("temperature-value", r.temperature, 1);
+  showValue("humidity-value", r.humidity, 1);
+  showValue("pressure-value", r.pressure, 1);
+  showValue("altitude-value", r.altitude, 1);
+  showValue("acceleration-value", r.acceleration, 2);
 
-  // Actual acceleration value reported by the ESP32.
-  showValue("acceleration-value", reading.acceleration, 2);
-
-  showStatus("uv-status", uvRisk(reading.uvIndex));
+  showStatus("uv-status", uvRisk(r.uvIndex));
   showStatus(
     "pollution-status",
-    reading.pollution === null ? "Unavailable" : "Live sensor reading"
+    r.pollution === null ? "Unavailable" : "ESP32 sensor reading"
   );
   showStatus(
     "acceleration-status",
-    reading.acceleration === null ? "Unavailable" : "Live ESP32 reading"
+    r.acceleration === null ? "Unavailable" : "ESP32 sensor reading"
   );
   showStatus(
     "alarm-status",
-    reading.alarm ? "ALARM" : reading.reason
+    r.alarm ? `ALARM: ${r.reason}` : r.reason
   );
 
-  const updated = $("last-updated");
-  if (updated) {
-    const date = new Date(reading.timestamp);
-    updated.textContent = `Last update: ${
-      Number.isNaN(date.getTime())
-        ? "time unavailable"
-        : date.toLocaleTimeString()
-    }`;
+  const time = $("last-updated");
+  if (time) {
+    const date = r.timestamp ? new Date(r.timestamp) : null;
+    time.textContent =
+      date && !Number.isNaN(date.getTime())
+        ? `Last update: ${date.toLocaleTimeString()}`
+        : "Latest API reading received";
   }
 
   const label = $("data-label");
-  if (label) label.textContent = "Live data from ESP32 via Render API";
+  if (label) label.textContent = "Sensor readings from ESP32 via Render";
 
-  updateGuidance(reading.uvIndex);
+  updateSkinCare(r.uvIndex);
+
+  const date = r.timestamp ? new Date(r.timestamp) : new Date();
 
   historyData.push({
-    ...reading,
-    label: new Date().toLocaleTimeString()
+    ...r,
+    label: Number.isNaN(date.getTime())
+      ? new Date().toLocaleTimeString()
+      : date.toLocaleTimeString()
   });
 
-  while (historyData.length > HISTORY_LIMIT) {
-    historyData.shift();
-  }
+  while (historyData.length > HISTORY_LIMIT) historyData.shift();
 
   updateCharts();
 }
@@ -176,39 +199,22 @@ async function refreshReadings() {
     const payload = await response.json();
 
     if (payload?.success === false) {
-      throw new Error("API reported an unsuccessful request");
+      throw new Error("The API reported a failed request");
     }
 
     const reading = normalizeApiData(payload);
-
     setConnection("connected", "Backend connected");
     renderReading(reading);
   } catch (error) {
     setConnection("disconnected", "Backend unavailable");
 
-    const updated = $("last-updated");
-    if (updated) updated.textContent = "Unable to fetch sensor data. Check the API connection.";
+    const time = $("last-updated");
+    if (time) time.textContent = "Unable to fetch readings. Check the API connection.";
 
     console.error("Sensor API error:", error);
   } finally {
     requestInProgress = false;
   }
-}
-
-function chartOptions() {
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
-    interaction: { intersect: false, mode: "index" },
-    plugins: {
-      legend: { position: "bottom" }
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { maxTicksLimit: 6 } },
-      y: { beginAtZero: true }
-    }
-  };
 }
 
 function createChart(id, label, color) {
@@ -230,7 +236,20 @@ function createChart(id, label, color) {
         spanGaps: false
       }]
     },
-    options: chartOptions()
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      interaction: { intersect: false, mode: "index" },
+      plugins: { legend: { position: "bottom" } },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { maxTicksLimit: 6 }
+        },
+        y: { beginAtZero: true }
+      }
+    }
   });
 }
 
@@ -254,22 +273,23 @@ function initCharts() {
 }
 
 function updateCharts() {
-  const labels = historyData.map(item => item.label);
-
-  const values = {
-    uv: historyData.map(item => item.uvIndex),
-    temperature: historyData.map(item => item.temperature),
-    humidity: historyData.map(item => item.humidity),
-    pressure: historyData.map(item => item.pressure),
-    altitude: historyData.map(item => item.altitude),
-    acceleration: historyData.map(item => item.acceleration)
+  const series = {
+    uv: "uvIndex",
+    temperature: "temperature",
+    humidity: "humidity",
+    pressure: "pressure",
+    altitude: "altitude",
+    acceleration: "acceleration"
   };
 
-  for (const [name, chart] of Object.entries(charts)) {
+  for (const [chartName, field] of Object.entries(series)) {
+    const chart = charts[chartName];
     if (!chart) continue;
 
-    chart.data.labels = labels;
-    chart.data.datasets[0].data = values[name];
+    chart.data.labels = historyData.map(item => item.label);
+    chart.data.datasets[0].data =
+      historyData.map(item => item[field]);
+
     chart.update("none");
   }
 }
@@ -284,11 +304,11 @@ function startAutoRefresh() {
 document.addEventListener("DOMContentLoaded", () => {
   initCharts();
 
-  const skinType = $("skin-type");
-  if (skinType) {
-    skinType.addEventListener("change", () => {
+  const selector = $("skin-type");
+  if (selector) {
+    selector.addEventListener("change", () => {
       const latest = historyData[historyData.length - 1];
-      updateGuidance(latest ? latest.uvIndex : null);
+      updateSkinCare(latest ? latest.uvIndex : null);
     });
   }
 
