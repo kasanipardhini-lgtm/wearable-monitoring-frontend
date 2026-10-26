@@ -2,26 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#102a43">
-  <meta name="description" content="Live wearable UV and pollution monitoring dashboard">
+  <meta name="description" content="Wearable UV and pollution monitoring dashboard">
   <title>Wearable UV & Pollution Monitor</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js" defer></script>
 
   <style>
     :root {
       --bg: #f3f6fb;
-      --card: #ffffff;
+      --card: #fff;
       --text: #183153;
       --muted: #64748b;
-      --primary: #2463eb;
       --border: #e2e8f0;
       --green: #15803d;
       --red: #b91c1c;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -57,8 +57,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
       flex-wrap: wrap;
+      gap: 12px;
       margin-bottom: 20px;
     }
 
@@ -95,7 +95,7 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, .04);
       min-width: 0;
     }
 
@@ -128,9 +128,7 @@
       font-size: 12px;
     }
 
-    .wide {
-      margin-top: 18px;
-    }
+    .wide { margin-top: 18px; }
 
     .panel h2 {
       font-size: 19px;
@@ -140,7 +138,24 @@
     .panel p {
       color: var(--muted);
       line-height: 1.6;
-      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 8px;
+      font-weight: 600;
+    }
+
+    select {
+      display: block;
+      width: 100%;
+      max-width: 420px;
+      padding: 11px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+      font-size: 15px;
     }
 
     .chart-grid {
@@ -155,44 +170,24 @@
       position: relative;
     }
 
-    .chart-box canvas {
-      max-width: 100%;
-    }
-
     .footer {
       text-align: center;
       color: var(--muted);
       font-size: 13px;
-      padding: 22px 0 0;
+      padding-top: 22px;
     }
 
     @media (max-width: 800px) {
-      .grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .chart-grid {
-        grid-template-columns: 1fr;
-      }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .chart-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 480px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      main {
-        padding-inline: 12px;
-      }
-
-      .sensor-card, .panel {
-        padding: 17px;
-      }
+      .grid { grid-template-columns: 1fr; }
+      main { padding-inline: 12px; }
+      .sensor-card, .panel { padding: 17px; }
     }
   </style>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js" defer></script>
 </head>
 
 <body>
@@ -262,13 +257,38 @@
     </section>
 
     <section class="panel wide">
-      <h2>UV Protection Guidance</h2>
+      <h2>Skin Care & UV Protection</h2>
+
+      <label for="skin-type">Select your skin type:</label>
+      <select id="skin-type">
+        <option value="I">Type I — Very fair, always burns</option>
+        <option value="II">Type II — Fair, burns easily</option>
+        <option value="III" selected>Type III — Medium, sometimes burns</option>
+        <option value="IV">Type IV — Olive, may burn</option>
+        <option value="V">Type V — Brown, rarely burns</option>
+        <option value="VI">Type VI — Deeply pigmented skin</option>
+      </select>
+
+      <h3 id="skincare-title">Your UV Protection Advice</h3>
+      <p id="skincare-advice">
+        Your sun protection guidance will update when UV readings arrive.
+      </p>
+
+      <p class="unit">
+        General educational guidance only. All skin types can experience UV damage.
+        Broad-spectrum SPF 30+ sunscreen, protective clothing, sunglasses and shade
+        can help reduce exposure.
+      </p>
+    </section>
+
+    <section class="panel wide">
+      <h2>UV Guidance Summary</h2>
       <h3 id="guidance-title">Waiting for UV data</h3>
       <p id="guidance-text">
         Guidance will appear when a valid UV reading is available.
       </p>
       <p id="guidance-source" class="unit">
-        Educational information only.
+        General educational information.
       </p>
     </section>
 
@@ -281,44 +301,32 @@
     <section class="chart-grid" aria-label="Sensor history charts">
       <article class="panel">
         <h2>UV History</h2>
-        <div class="chart-box">
-          <canvas id="uv-chart"></canvas>
-        </div>
+        <div class="chart-box"><canvas id="uv-chart"></canvas></div>
       </article>
 
       <article class="panel">
         <h2>Temperature History</h2>
-        <div class="chart-box">
-          <canvas id="temperature-chart"></canvas>
-        </div>
+        <div class="chart-box"><canvas id="temperature-chart"></canvas></div>
       </article>
 
       <article class="panel">
         <h2>Humidity History</h2>
-        <div class="chart-box">
-          <canvas id="humidity-chart"></canvas>
-        </div>
+        <div class="chart-box"><canvas id="humidity-chart"></canvas></div>
       </article>
 
       <article class="panel">
         <h2>Pressure History</h2>
-        <div class="chart-box">
-          <canvas id="pressure-chart"></canvas>
-        </div>
+        <div class="chart-box"><canvas id="pressure-chart"></canvas></div>
       </article>
 
       <article class="panel">
         <h2>Altitude History</h2>
-        <div class="chart-box">
-          <canvas id="altitude-chart"></canvas>
-        </div>
+        <div class="chart-box"><canvas id="altitude-chart"></canvas></div>
       </article>
 
       <article class="panel">
         <h2>Acceleration History</h2>
-        <div class="chart-box">
-          <canvas id="acceleration-chart"></canvas>
-        </div>
+        <div class="chart-box"><canvas id="acceleration-chart"></canvas></div>
       </article>
     </section>
 
