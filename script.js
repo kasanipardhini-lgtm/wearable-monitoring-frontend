@@ -1,5 +1,5 @@
 
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = "https://wearable-uv-pollution-monitoring.onrender.com";
 const REFRESH_INTERVAL_MS = 2000;
 const HISTORY_LIMIT = 12;
 
